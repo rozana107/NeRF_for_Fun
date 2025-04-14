@@ -43,6 +43,12 @@ python
 >>> torch.cuda.is_available()
 
 ```
+
+Save the dependencies in a file:
+```
+pip freeze --local > requirements.txt
+```
+
 ## Architecture
 
 The NeRF (Neural Radiance Fields) method is a neural rendering technique that synthesizes novel views of complex 3D scenes by learning a continuous volumetric scene representation. Here's a high-level overview of its architecture:
@@ -74,3 +80,30 @@ The NeRF (Neural Radiance Fields) method is a neural rendering technique that sy
 The current state of the art implementation of the NeRF are: 
 - [nerfstudio][https://github.com/nerfstudio-project/nerfstudio]
 - [instant-ngp][https://github.com/NVlabs/instant-ngp]
+
+what we need for the NeRF implementation:
+
+- Volume of space that is voxelized
+- Camera position and orientation
+- Calculating the ray for each pixel
+- Calculating the color and opacity at a point on each ray
+- Nerual network to predict the color and opacity
+- Rendering the image from a camera position
+- Loss function for rendered image and ground truth image
+- Dataset loader for training and testing 
+- Dataset of images and camera positions
+- Training/Testing loops
+- Evaluation code
+
+Neural Network
+
+- Inputs: ray direction, ray origin
+    - Ray direction: direction of the ray from the camera (theta, phi) 
+- Outputs: color, opacity
+    - Color: RGB color of the pixel
+    - Opacity: how much light is absorbed by the object
+- Architecture: 3 layers of 256 neurons each
+    - Activation function: ReLU
+    - Output layer: 3 neurons for color, 1 neuron for opacity
+- Loss function: Mean Squared Error (MSE) between predicted color and ground truth color
+    - MSE = 1/n * sum((predicted_color - ground_truth_color)^2)
