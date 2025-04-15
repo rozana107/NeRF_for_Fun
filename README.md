@@ -87,7 +87,7 @@ what we need for the NeRF implementation:
 - Camera position and orientation
 - Calculating the ray for each pixel
 - Calculating the color and opacity at a point on each ray
-- Nerual network to predict the color and opacity
+- Neural network to predict the color and opacity
 - Rendering the image from a camera position
 - Loss function for rendered image and ground truth image
 - Dataset loader for training and testing 
@@ -96,14 +96,29 @@ what we need for the NeRF implementation:
 - Evaluation code
 
 Neural Network
-
 - Inputs: ray direction, ray origin
     - Ray direction: direction of the ray from the camera (theta, phi) 
 - Outputs: color, opacity
     - Color: RGB color of the pixel
     - Opacity: how much light is absorbed by the object
 - Architecture: 3 layers of 256 neurons each
-    - Activation function: ReLU
-    - Output layer: 3 neurons for color, 1 neuron for opacity
-- Loss function: Mean Squared Error (MSE) between predicted color and ground truth color
-    - MSE = 1/n * sum((predicted_color - ground_truth_color)^2)
+
+model.py
+- model class
+- forward function
+- loss function
+
+utinl.py
+- ray sampling
+- volume sampling
+- volume rendering
+
+train.py
+- training loop
+- testing loop
+
+eval.py
+- generate one image from a camera position
+
+
+
