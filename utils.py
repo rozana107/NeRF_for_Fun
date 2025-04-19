@@ -34,6 +34,18 @@ class Volume:
     resolution: torch.Tensor
     position: torch.Tensor = torch.tensor([[0], [0], [0]], dtype=torch.float32)
 
+    def normalize_position(self, position: torch.Tensor) -> torch.Tensor:
+        """Normalize a position in world space to a position in the volume's coordinate system"""
+        # Calculate the volume's center in world space
+        volume_center = self.position + self.size / 2
+        # Calculate the relative position of the point in the volume's coordinate system
+        relative_position = position - volume_center
+        # Normalize the position to the volume's coordinate system
+        normalized_position = relative_position / self.size
+        
+        return normalized_position
+
+
 class RayUtils:
     @staticmethod
     def get_rays(camera: Camera) -> List[Ray]:
@@ -97,8 +109,11 @@ if __name__ == "__main__":
 
     #create a camera object
     camera = Camera(
-        position= torch.tensor([[0], [0], [0]], dtype=torch.float32),
-        orientation=torch.eye(3, dtype=torch.float32),
+        position= torch.tensor([[2.45], [-2], [1.45]], dtype=torch.float32),
+        orientation=torch.tensor([
+            [0.6601, -0.2126,  0.7205],
+            [0.7512,  0.1868, -0.6331],
+            [0.0000,  0.9591,  0.2830]], dtype=torch.float32),
         image_width=20,
         image_height=20,
         focal_length=0.5

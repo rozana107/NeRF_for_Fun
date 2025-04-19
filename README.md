@@ -96,11 +96,12 @@ what we need for the NeRF implementation:
 - Evaluation code
 
 Neural Network
-- Inputs: ray direction, ray origin
-    - Ray direction: direction of the ray from the camera (theta, phi) 
+- Inputs: 
+      - Point: 3D coordinates of the point in the volume (x, y, z)
+      - Viewing direction: 2D vector representing the direction of the camera (theta, phi)
 - Outputs: color, opacity
-    - Color: RGB color of the pixel
-    - Opacity: how much light is absorbed by the object
+      - Color: RGB color of the pixel
+      - Opacity: how much light is absorbed by the object at that point
 - Architecture: 3 layers of 256 neurons each
 
 model.py
@@ -108,7 +109,7 @@ model.py
 - forward function
 - loss function
 
-utinl.py
+utils.py
 - ray sampling
 - volume sampling
 - volume rendering
