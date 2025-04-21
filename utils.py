@@ -45,7 +45,16 @@ class Volume:
         
         return normalized_position
 
+class Point:
+    """Dataclass for a point in 3D space"""
+    #inputs to neural net
+    position: torch.Tensor  
+    viw_angle: torch.Tensor = None  # Optional view angle attribute
+    # outputs from neural net
+    color: torch.Tensor = None  # Optional color attribute
+    opacity: float = 1.0  # Default opacity
 
+    
 class RayUtils:
     @staticmethod
     def get_rays(camera: Camera) -> List[Ray]:
@@ -90,7 +99,38 @@ class RayUtils:
 
         return rays
 
-# Ray sampling
+# Given a Ray and a Volume, sample N points along the ray within the volume
+def sample_points_in_ray(ray: Ray, volume: Volume, num_samples: int=100) -> List[Point]:
+    """Sample N points along the ray within the volume."""
+
+    direction = ray.direction
+
+    step_size = 1.0 / num_samples
+
+    points = []
+
+    for i in range(num_samples):
+
+        point = ray.origin + direction * (i * step_size)
+
+        normalized_point = volume.normalize_position(point)
+        points.append(Point(position=normalized_point))
+
+    return points
+
+def get_points(camera: Camera,volume: Volume) -> List[Point]:
+    """Get points from the camera and volume."""
+
+    # Get rays from the camera
+    rays = RayUtils.get_rays(camera)
+
+    # Sample points along each ray within the volume
+    all_points = []
+    for ray in rays:
+        points = sample_points_in_ray(ray, volume)  # Use default num_samples
+        all_points.extend(points)
+
+    return all_points
 
 # Volume sampling
 
