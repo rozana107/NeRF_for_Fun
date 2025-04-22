@@ -48,6 +48,10 @@ Save the dependencies in a file:
 ```
 pip freeze --local > requirements.txt
 ```
+## Data Collection
+Create a synthetic dataset of images and camera positions:
+
+The dataset will contain 100 images of the same object from 100 different camera positions.
 
 ## Architecture
 
