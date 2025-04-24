@@ -1,14 +1,12 @@
 """ Dataset Classes """ 
 
 import os
-import re
-import torch
 import csv
 from torch.utils.data import Dataset
 from PIL import Image
 
 
-class SyntheticDataset(torch.utils.data.Dataset):
+class SyntheticDataset(Dataset):
     def __init__(self, 
         root: str, 
         csv_filepath: str):

@@ -1,7 +1,6 @@
 """Main training script for the model."""
 
 import numpy as np
-import hyperopt
 from hyperopt import fmin, tpe, hp
 
 from train import train
@@ -41,7 +40,7 @@ if __name__ == "__main__":
         fn=objective,
         space=search_space,
         algo=tpe.suggest,
-        max_evals=100,
+        max_evals=50,
     )
-    # Print the best dataset found
+    # Print the best parameters found
     print(best)
