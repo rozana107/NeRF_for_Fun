@@ -4,20 +4,13 @@ import torch
 from data import SyntheticDataset
 from model import NeRFModel  
 
-def load_dataset(dataset_path:str="data/ShapeNetCore.v2", batch_size:int=2):
-    """
-    Load the dataset from the specified path and return a DataLoader.
-    
-    Args:
-        dataset_path (str): Path to the dataset.
-        batch_size (int): Batch size for DataLoader.
-    
-    Returns:
-        DataLoader: DataLoader for the dataset.
-    """
-    # Implement dataset loading logic here
-    pass
-
+def nerf_l2_loss(preds, targets):
+    """difference betwenn ground truth pixel value and 
+    sum of predicted pixel values"""
+    total_loss = 0.0
+    for p, t in zip(preds, targets):
+        total_loss += torch.mean((p - t) ** 2)
+    return total_loss / len(preds)
 
 def train(
     train_dataset_path:str="",
@@ -27,6 +20,7 @@ def train(
     num_epochs:int=10,
     num_layers:int=3,
     num_hidden:int=256,
+    use_leaky_relu:bool=False,
     lr:float=0.001,
     batch_size:int=2,
 ) -> float:
@@ -47,17 +41,17 @@ def train(
     model = NeRFModel(
         num_layers = num_layers,
         num_hidden = num_hidden,
+        use_leaky_relu=use_leaky_relu,
     )
     
 
-    #Create the optimizer
+    #  Create the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    #Create the loss function
-    loss_fn = torch.nn.MSELoss()
+
     # Move the model to the GPU if available    
     if torch.cuda.is_available():
         model = model.cuda()
-        loss_fn = loss_fn.cuda()
+        nerf_l2_loss = nerf_l2_loss.cuda()
 
     # Keep track of the best loss
     best_loss = float('inf')
@@ -69,7 +63,10 @@ def train(
             optimizer.zero_grad()
 
             # TODO: Do Rendering 
-            
+            # Combine the theta nad phi and sample point locations into a innput tensor
+            image = torch.cat((theta, phi), dim=1)
+            image = image.view(-1, 3)  # Flatten the image tensor if needed   
+
             # Forward pass
             outputs = model(image, theta, phi)
 
@@ -77,7 +74,12 @@ def train(
             target = image  # Replace this with the actual target from your dataset
 
             # Compute loss
-            loss = loss_fn(outputs, target)
+            loss = nerf_l2_loss(
+                # A pixel color from a single ray
+                outputs, 
+                # A pixel color in the ground truth image
+                target
+            )
 
             # Check to see if the loss is the best loss so far
             if loss < best_loss:
@@ -95,8 +97,10 @@ def train(
             # Forward pass
             outputs = model(image, theta, phi)
 
+            target = image
+
             # Compute loss
-            loss = loss_fn(outputs, target)
+            loss = nerf_l2_loss(outputs, target)
             valid_loss += loss.item()
         valid_loss /= len(valid_dataloader) 
 
@@ -114,12 +118,17 @@ def train(
         # Forward pass
         outputs = model(image, theta, phi)
 
+        target = image
+
         # Compute loss
-        loss = loss_fn(outputs, target)
+        loss = nerf_l2_loss(outputs, target)
         test_loss += loss.item()
     test_loss /= len(test_dataloader)   
 
     
+
+    print(f"Test Loss: {test_loss}")
+
     return best_loss, test_loss
 
 
@@ -129,4 +138,3 @@ if __name__ == "__main__":
 # Debugging train and test
     train()
 
-    test()

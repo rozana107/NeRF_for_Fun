@@ -22,8 +22,8 @@ nerf_env\Scripts\activate
 python3 -m venv nerf_env
 source nerf_env/bin/activate  
 ```
-# Note: If you are using a different CUDA version or a CPU-only setup, refer to the official PyTorch installation guide:
-# https://pytorch.org/get-started/locally/
+Note: If you are using a different CUDA version or a CPU-only setup, refer to the official PyTorch installation guide:
+https://pytorch.org/get-started/locally/
 
 Install PyTorch based on your OS and CUDA version:
 
@@ -35,7 +35,7 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 ```
 
-Test if you are installed corrcetly:
+Test if you are installed correctly:
 
 ```
 python
@@ -47,6 +47,11 @@ python
 Save the dependencies in a file:
 ```
 pip freeze --local > requirements.txt
+```
+
+Install the dependencies locally:
+```
+pip install -r requirements.txt
 ```
 ## Data Collection
 Create a synthetic dataset of images and camera positions:
