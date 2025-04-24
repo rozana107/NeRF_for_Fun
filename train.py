@@ -3,6 +3,9 @@
 import torch
 from data import SyntheticDataset
 from model import NeRFModel  
+from utils import Camera, Ray, Volume
+from utils import get_points, get_rays, sample_points_in_ray
+
 
 def nerf_l2_loss(preds, targets):
     """difference betwenn ground truth pixel value and 
@@ -24,6 +27,12 @@ def train(
     lr:float=0.001,
     batch_size:int=2,
 ) -> float:
+    
+    # create a volume object
+    volume = Volume(
+
+    )
+
     # Load the dataset
     train_dataset = SyntheticDataset(dataset_path=train_dataset_path)
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -58,46 +67,60 @@ def train(
 
     for epoch in range(num_epochs):
         # Iterate over the dataset
-        for image, theta, phi in train_dataloader:
+        for d in train_dataloader:
             # Zero the parameter gradients
             optimizer.zero_grad()
 
-            # TODO: Do Rendering 
-            # Combine the theta nad phi and sample point locations into a innput tensor
-            image = torch.cat((theta, phi), dim=1)
-            image = image.view(-1, 3)  # Flatten the image tensor if needed   
+            # create camera object
+            camera = Camera(
+                position=d['camera_position'],
+                orientation=d['camera_orientation'],
+                focal_length= 0.5,
+                img_width= 128,
+                img_height= 128,
+            )
+            # Extract theta and phi from the dataset
+            theta = d['theta'].unsqueeze(1)  # Add a dimension to theta
+            phi = d['phi'].unsqueeze(1)  # Add a dimension to phi
 
-            # Forward pass
-            outputs = model(image, theta, phi)
+            # get all points that are sampled in the ray
+            for point in get_points(camera, volume):
+                # Combine the theta and phi and sample point locations into an input tensor
+                single_point_model_input = torch.cat((theta, phi, point), dim=1) 
 
-            # Define target (e.g., ground truth image or expected output)
-            target = image  # Replace this with the actual target from your dataset
+            # Forward pass (N x 4)
+            outputs = model(single_point_model_input)
+
+            # Each batch is going to represent a single ray
+            assert outputs.shape[0] == batch_size, "Batch size mismatch"
+    
+            # Compute the final pixel value for each output ray (ray marching)
+            predicted_pixel_value = torch.zeros(batch_size, 3).cuda()
+            for point in range(batch_size):
+                opacity = outputs[point, 0]
+                color = outputs[point, 1:]
+                predicted_pixel_value += (1 - opacity) * color
 
             # Compute loss
             loss = nerf_l2_loss(
                 # A pixel color from a single ray
-                outputs, 
+                predicted_pixel_value,
                 # A pixel color in the ground truth image
-                target
+                d['pixel_value'].unsqueeze(0).cuda()
             )
-
             # Check to see if the loss is the best loss so far
             if loss < best_loss:
                 best_loss = loss.item()
-
             # Backward pass
             loss.backward()
-
             # Update weights
             optimizer.step()
 
         # validation step
         valid_loss = 0.0
-        for image, theta, phi in valid_dataloader:
+        for d in valid_dataloader:
             # Forward pass
-            outputs = model(image, theta, phi)
-
-            target = image
+            outputs = model(d['image'], d['theta'], d['phi'])
 
             # Compute loss
             loss = nerf_l2_loss(outputs, target)

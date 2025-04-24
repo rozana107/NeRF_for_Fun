@@ -2,7 +2,11 @@
 
 import bpy
 import math
+import os
+import uuid
+
 from mathutils import Vector
+import csv
 
 # === Scene Settings ===
 OBJECT_SIZE = 1.0
@@ -11,7 +15,7 @@ OBJECT_LOCATION = (0, 0, 0.5)
 CAMERA_SPHERE_RADIUS = 5.0
 CAMERA_IMAGE_SIZE = (200, 200)
 IMAGE_FILEPATH = "D:/My_Computer/Work projects/Research_Coding_Interview/Blender/images/"
-
+CSV_FILENAME = "D:/My_Computer/Work projects/Research_Coding_Interview/Blender/dataset.csv"
 THETA_STEPS = 10  # number of elevation rows (from top to equator)
 PHI_STEPS_BASE = 16  # base azimuth steps for the first theta row (more added as theta increases)
 
@@ -42,36 +46,53 @@ light_object.location = (CAMERA_SPHERE_RADIUS, CAMERA_SPHERE_RADIUS, CAMERA_SPHE
 bpy.context.scene.render.resolution_x = CAMERA_IMAGE_SIZE[0]
 bpy.context.scene.render.resolution_y = CAMERA_IMAGE_SIZE[1]
 
-# === Generate Hemisphere Grid Samples ===
-sample_index = 0
-for i in range(THETA_STEPS):
-    # θ from 0 (top) to π/2 (equator)
-    theta = (math.pi / 2) * (i + 1) / (THETA_STEPS + 1)
+with open(CSV_FILENAME, 'w', newline='') as csvfile:
+    csvwriter = csv.writer(csvfile)
 
-    # More phi samples as theta increases (use sin(theta) for density)
-    phi_steps = max(4, round(PHI_STEPS_BASE * math.sin(theta)))
-    for j in range(phi_steps):
-        phi = 2 * math.pi * j / phi_steps
+    # === Generate Hemisphere Grid Samples ===
+    sample_index = 0
+    for i in range(THETA_STEPS):
+        # θ from 0 (top) to π/2 (equator)
+        theta = (math.pi / 2) * (i + 1) / (THETA_STEPS + 1)
 
-        # Spherical to Cartesian
-        x = CAMERA_SPHERE_RADIUS * math.sin(theta) * math.cos(phi)
-        y = CAMERA_SPHERE_RADIUS * math.sin(theta) * math.sin(phi)
-        z = CAMERA_SPHERE_RADIUS * math.cos(theta)
+        # More phi samples as theta increases (use sin(theta) for density)
+        phi_steps = max(4, round(PHI_STEPS_BASE * math.sin(theta)))
+        for j in range(phi_steps):
+            phi = 2 * math.pi * j / phi_steps
 
-        # Move and rotate camera
-        camera.location = (x, y, z)
-        direction = Vector(OBJECT_LOCATION) - camera.location
-        rot_quat = direction.to_track_quat('-Z', 'Y')
-        camera.rotation_euler = rot_quat.to_euler()
+            # Spherical to Cartesian
+            x = CAMERA_SPHERE_RADIUS * math.sin(theta) * math.cos(phi)
+            y = CAMERA_SPHERE_RADIUS * math.sin(theta) * math.sin(phi)
+            z = CAMERA_SPHERE_RADIUS * math.cos(theta)
 
-        # Optional: add a debug sphere at camera position
-        bpy.ops.mesh.primitive_ico_sphere_add(radius=0.05, location=(x, y, z))
+            # Move and rotate camera
+            camera.location = (x, y, z)
+            direction = Vector(OBJECT_LOCATION) - camera.location
+            rot_quat = direction.to_track_quat('-Z', 'Y')
+            camera.rotation_euler = rot_quat.to_euler()
 
-        # Render
-        bpy.context.view_layer.update()
-        bpy.ops.render.render(write_still=True, use_viewport=True)
-        bpy.data.images['Render Result'].save_render(
-            filepath=f"{IMAGE_FILEPATH}render_{sample_index:03d}_theta_{theta:.2f}_phi_{phi:.2f}.png"
-        )
+            # Optional: add a debug sphere at camera position
+            bpy.ops.mesh.primitive_ico_sphere_add(radius=0.05, location=(x, y, z))
 
-        sample_index += 1
+            # image filename
+            image_filename = uuid.uuid4().hex + '.png'
+            # Render
+            bpy.context.view_layer.update()
+            bpy.ops.render.render(write_still=True, use_viewport=True)
+            bpy.data.images['Render Result'].save_render(
+                filepath=os.path.join(IMAGE_FILEPATH, image_filename)
+            )
+
+            sample_index += 1
+
+            # Write to CSV: theta, phi, camera position (x, y, z), camera rotation (x, y, z)
+            # Imgae filename
+            row = [image_filename]
+            # Camera position to row
+            row += [x, y, z]
+            # Append camera orientation as 9 values (3x3 matrix flattened)
+            row += [camera.matrix_world[i][j] for i in range(3) for j in range(3)]
+            # Append theta and phi
+            row += [theta, phi]
+            # camera position x 3, camera orientation x 9, theta, phi
+            csvwriter.writerow(row)
