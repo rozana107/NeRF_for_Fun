@@ -9,7 +9,7 @@ NeRF implementation
 -Jax
 
 
-# Instalation
+# Installation
 
 Create a virtual environment to isolate dependencies and activate it:
 
@@ -57,6 +57,7 @@ pip install -r requirements.txt
 Create a synthetic dataset of images and camera positions:
 
 The dataset will contain 100 images of the same object from 100 different camera positions.
+![monkey_camera_location](https://github.com/user-attachments/assets/b2d608dd-64d0-4ed1-b6b6-46a6715b7d30)
 
 ## Architecture
 
